@@ -1,20 +1,34 @@
 const jwt = require("jsonwebtoken");
+const userModel = require("../models/user.model");
 
 async function authUser(req, res, next) {
-  const token = req.cookies?.token || req.headers.authorization?.split(" ")[1];
+  console.log("req.cookies:", req.cookies); // Log the cookies to see what is being sent
+  const token = req.cookies.token;
   if (!token) {
     return res.status(401).json({ message: "User Not Logged In" });
   }
 
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    req.user = decoded;
+   
+    const user = await userModel.findById({
+      _id: decoded.id,
+    })
+
+         if (!user) {
+      return res.status(401).json({
+        message: "User not found, please login again",
+      });
+    }
+
+    req.user = user;
+    
     next();
   } catch (error) {
     return res.status(401).json({ message: "Invalid Token" });
   }
 }
 
-modue.exports = {
+module.exports = {
   authUser,
 };
